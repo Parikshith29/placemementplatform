@@ -7,7 +7,8 @@ import {
     UserCircle,
     Search,
     Bell,
-    History
+    History,
+    ShieldCheck
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -21,6 +22,7 @@ export default function DashboardLayout() {
         { name: 'Resources', icon: BookOpen, path: '/resources' },
         { name: 'Profile', icon: UserCircle, path: '/profile' },
         { name: 'Quality Guard', icon: ClipboardList, path: '/prp/07-test' },
+        { name: 'Submission Proof', icon: ShieldCheck, path: '/prp/proof' },
     ];
 
     return (

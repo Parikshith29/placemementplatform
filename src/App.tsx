@@ -10,6 +10,7 @@ import Resources from './pages/Resources';
 import Profile from './pages/Profile';
 import TestChecklist from './pages/TestChecklist';
 import ShipPortal from './pages/ShipPortal';
+import Proof from './pages/Proof';
 
 const ShipLock = ({ children }: { children: React.ReactNode }) => {
     const saved = localStorage.getItem('prp_test_checklist');
@@ -40,6 +41,7 @@ function App() {
                     <Route path="/resources" element={<Resources />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/prp/07-test" element={<TestChecklist />} />
+                    <Route path="/prp/proof" element={<Proof />} />
                     <Route
                         path="/prp/08-ship"
                         element={
