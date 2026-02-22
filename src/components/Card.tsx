@@ -1,21 +1,25 @@
 import React from 'react';
 
-interface CardProps {
-    children: React.ReactNode;
-    padding?: string;
-    style?: React.CSSProperties;
-}
+export const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+    <div className={`rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden ${className}`}>
+        {children}
+    </div>
+);
 
-export const Card: React.FC<CardProps> = ({ children, padding = 'var(--spacing-24)', style }) => {
-    return (
-        <div style={{
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--border-radius)',
-            padding,
-            backgroundColor: '#FFFFFF',
-            ...style
-        }}>
-            {children}
-        </div>
-    );
-};
+export const CardHeader = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+    <div className={`p-6 pb-0 ${className}`}>
+        {children}
+    </div>
+);
+
+export const CardTitle = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+    <h3 className={`text-xl font-bold text-slate-900 ${className}`}>
+        {children}
+    </h3>
+);
+
+export const CardContent = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+    <div className={`p-6 ${className}`}>
+        {children}
+    </div>
+);
