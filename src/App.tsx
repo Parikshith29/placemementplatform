@@ -3,6 +3,8 @@ import LandingPage from './components/LandingPage';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Practice from './pages/Practice';
+import Results from './pages/Results';
+import History from './pages/History';
 import Assessments from './pages/Assessments';
 import Resources from './pages/Resources';
 import Profile from './pages/Profile';
@@ -18,6 +20,8 @@ function App() {
                 <Route element={<DashboardLayout />}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/practice" element={<Practice />} />
+                    <Route path="/results" element={<Results />} />
+                    <Route path="/history" element={<History />} />
                     <Route path="/assessments" element={<Assessments />} />
                     <Route path="/resources" element={<Resources />} />
                     <Route path="/profile" element={<Profile />} />
