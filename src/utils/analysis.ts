@@ -14,6 +14,8 @@ export interface AnalysisResult {
     checklist: { round: string; items: string[] }[];
     questions: string[];
     readinessScore: number;
+    baseReadinessScore: number;
+    skillConfidenceMap: Record<string, 'know' | 'practice'>;
 }
 
 const SKILL_DATABASE = {
@@ -111,6 +113,11 @@ export function analyzeJD(company: string, role: string, jdText: string): Analys
         }
     }
 
+    const confidenceMap: Record<string, 'know' | 'practice'> = {};
+    allFoundSkills.forEach(skill => {
+        confidenceMap[skill] = 'practice';
+    });
+
     return {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
@@ -121,19 +128,36 @@ export function analyzeJD(company: string, role: string, jdText: string): Analys
         plan,
         checklist,
         questions: questions.slice(0, 10),
-        readinessScore: score
+        readinessScore: score,
+        baseReadinessScore: score,
+        skillConfidenceMap: confidenceMap
     };
 }
 
-export function saveResult(result: AnalysisResult) {
+export function updateResult(updatedResult: AnalysisResult) {
     const history = getHistory();
-    const updated = [result, ...history];
+    const index = history.findIndex(r => r.id === updatedResult.id);
+    if (index !== -1) {
+        history[index] = updatedResult;
+        localStorage.setItem('prep_history', JSON.stringify(history));
+    }
+}
+
+export function saveResult(result: AnalysisResult) {
+    const updated = [result, ...getHistory()]; // Use getHistory to ensure migration is applied before saving
     localStorage.setItem('prep_history', JSON.stringify(updated.slice(0, 20))); // Keep last 20
 }
 
 export function getHistory(): AnalysisResult[] {
     const data = localStorage.getItem('prep_history');
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    // Migration for old entries
+    return parsed.map((r: any) => ({
+        ...r,
+        baseReadinessScore: r.baseReadinessScore ?? r.readinessScore ?? 35,
+        skillConfidenceMap: r.skillConfidenceMap ?? {}
+    })) as AnalysisResult[];
 }
 
 export function getResultById(id: string): AnalysisResult | undefined {
