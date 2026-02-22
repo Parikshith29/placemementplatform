@@ -1,43 +1,33 @@
-import React from 'react';
-import { Layout } from './components/Layout';
-import { Card } from './components/Card';
-import { Button } from './components/Button';
-import { Input } from './components/Input';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './components/LandingPage';
+import DashboardLayout from './components/DashboardLayout';
+import Dashboard from './pages/Dashboard';
+import Practice from './pages/Practice';
+import Assessments from './pages/Assessments';
+import Resources from './pages/Resources';
+import Profile from './pages/Profile';
 
-const App: React.FC = () => {
+function App() {
     return (
-        <Layout>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-40)', padding: 'var(--spacing-40) 0' }}>
-                <section>
-                    <h2 style={{ fontSize: '32px', marginBottom: 'var(--spacing-24)' }}>Project Setup</h2>
-                    <Card>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-24)' }}>
-                            <Input label="Project Name" placeholder="Enter your project name..." />
-                            <Input label="Short Description" placeholder="What are you building?" />
-                            <div style={{ display: 'flex', gap: 'var(--spacing-16)' }}>
-                                <Button>Create Project</Button>
-                                <Button variant="secondary">Cancel</Button>
-                            </div>
-                        </div>
-                    </Card>
-                </section>
+        <BrowserRouter>
+            <Routes>
+                {/* Public Route */}
+                <Route path="/" element={<LandingPage />} />
 
-                <section>
-                    <h2 style={{ fontSize: '32px', marginBottom: 'var(--spacing-24)' }}>Recent Activity</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-24)' }}>
-                        <Card>
-                            <h3 style={{ fontSize: '20px', marginBottom: 'var(--spacing-8)' }}>Design Review</h3>
-                            <p style={{ color: 'var(--text-secondary)' }}>The design system is now fully implemented with all core tokens.</p>
-                        </Card>
-                        <Card>
-                            <h3 style={{ fontSize: '20px', marginBottom: 'var(--spacing-8)' }}>Build Status</h3>
-                            <p style={{ color: 'var(--text-secondary)' }}>Vite environment configured and dependencies installed.</p>
-                        </Card>
-                    </div>
-                </section>
-            </div>
-        </Layout>
+                {/* Dashboard Routes wrapped in Layout */}
+                <Route element={<DashboardLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/practice" element={<Practice />} />
+                    <Route path="/assessments" element={<Assessments />} />
+                    <Route path="/resources" element={<Resources />} />
+                    <Route path="/profile" element={<Profile />} />
+                </Route>
+
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </BrowserRouter>
     );
-};
+}
 
 export default App;
