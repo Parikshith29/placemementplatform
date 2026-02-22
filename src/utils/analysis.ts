@@ -1,211 +1,189 @@
-export interface AnalyzedSkills {
-    category: string;
-    skills: string[];
+export interface ExtractedSkills {
+    coreCS: string[];
+    languages: string[];
+    web: string[];
+    data: string[];
+    cloud: string[];
+    testing: string[];
+    other: string[];
+}
+
+export interface RoundMappingItem {
+    roundTitle: string;
+    focusAreas: string[];
+    whyItMatters: string;
+}
+
+export interface ChecklistItem {
+    roundTitle: string;
+    items: string[];
+}
+
+export interface DayPlan {
+    day: string;
+    focus: string;
+    tasks: string[];
 }
 
 export interface AnalysisResult {
     id: string;
     createdAt: string;
+    updatedAt: string;
     company: string;
     role: string;
     jdText: string;
-    extractedSkills: AnalyzedSkills[];
-    plan: string[];
-    checklist: { round: string; items: string[] }[];
+    extractedSkills: ExtractedSkills;
+    roundMapping: RoundMappingItem[];
+    checklist: ChecklistItem[];
+    plan7Days: DayPlan[];
     questions: string[];
-    readinessScore: number;
-    baseReadinessScore: number;
+    baseScore: number;
+    finalScore: number;
     skillConfidenceMap: Record<string, 'know' | 'practice'>;
-    companyIntel?: {
-        industry: string;
-        size: 'Startup' | 'Mid-size' | 'Enterprise';
-        focus: string;
-    };
-    roundMapping?: {
-        round: string;
-        focus: string;
-        description: string;
-    }[];
 }
 
 const SKILL_DATABASE = {
-    "Core CS": ["DSA", "OOP", "DBMS", "OS", "Networks"],
-    "Languages": ["Java", "Python", "JavaScript", "TypeScript", "C", "C++", "C#", "Go"],
-    "Web": ["React", "Next.js", "Node.js", "Express", "REST", "GraphQL"],
-    "Data": ["SQL", "MongoDB", "PostgreSQL", "MySQL", "Redis"],
-    "Cloud/DevOps": ["AWS", "Azure", "GCP", "Docker", "Kubernetes", "CI/CD", "Linux"],
-    "Testing": ["Selenium", "Cypress", "Playwright", "JUnit", "PyTest"]
+    coreCS: ["DSA", "OOP", "DBMS", "OS", "Networks"],
+    languages: ["Java", "Python", "JavaScript", "TypeScript", "C", "C++", "C#", "Go"],
+    web: ["React", "Next.js", "Node.js", "Express", "REST", "GraphQL"],
+    data: ["SQL", "MongoDB", "PostgreSQL", "MySQL", "Redis"],
+    cloud: ["AWS", "Azure", "GCP", "Docker", "Kubernetes", "CI/CD", "Linux"],
+    testing: ["Selenium", "Cypress", "Playwright", "JUnit", "PyTest"]
 };
 
-const ROUND_TEMPLATES = [
-    { round: "Round 1: Aptitude / Basics", base: ["Quantitative Aptitude", "Logical Reasoning", "Verbal Ability", "CS Fundamentals"] },
-    { round: "Round 2: DSA + Core CS", base: ["Data Structures", "Algorithms", "Time Complexity"] },
-    { round: "Round 3: Tech Interview", base: ["Project Walkthrough", "System Design Basics", "Coding Principles"] },
-    { round: "Round 4: Managerial / HR", base: ["Why this company?", "Strengths & Weaknesses", "Behavioral questions", "Salary expectations"] }
-];
-
 export function analyzeJD(company: string, role: string, jdText: string): AnalysisResult {
-    const extracted: AnalyzedSkills[] = [];
+    const extracted: ExtractedSkills = {
+        coreCS: [],
+        languages: [],
+        web: [],
+        data: [],
+        cloud: [],
+        testing: [],
+        other: []
+    };
+
     const text = jdText.toLowerCase();
     let categoriesFound = 0;
 
     // 1. Skill Extraction
     Object.entries(SKILL_DATABASE).forEach(([category, skills]) => {
         const found = skills.filter(skill => {
-            // Create regex for whole word matching to avoid "Go" matching in "Good"
             const regex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
             return regex.test(text);
         });
 
         if (found.length > 0) {
-            extracted.push({ category, skills: found });
+            (extracted as any)[category] = found;
             categoriesFound++;
         }
     });
 
-    const allFoundSkills = extracted.flatMap(se => se.skills);
+    // Default behavior if no skills detected
+    if (categoriesFound === 0) {
+        extracted.other = ["Communication", "Problem solving", "Basic coding", "Projects"];
+    }
 
-    // 2. Readiness Score
-    let score = 35;
-    score += Math.min(categoriesFound * 5, 30);
-    if (company.trim()) score += 10;
-    if (role.trim()) score += 10;
-    if (jdText.length > 800) score += 10;
-    score = Math.min(score, 100);
+    const allFoundSkills = Object.values(extracted).flat();
 
-    // 3. Checklist Generation
-    const checklist = ROUND_TEMPLATES.map(rt => {
-        const items = [...rt.base];
-        if (rt.round.includes("DSA") && allFoundSkills.includes("DSA")) items.push("Advanced DSA Patterns");
-        if (rt.round.includes("Tech") && allFoundSkills.length > 0) {
-            items.push(...allFoundSkills.slice(0, 3).map(s => `${s} Implementation`));
-        }
-        return { round: rt.round, items: items.slice(0, 7) };
-    });
+    // 2. Base Score Calculation
+    let baseScore = 35;
+    baseScore += Math.min(categoriesFound * 5, 30);
+    if (company.trim()) baseScore += 10;
+    if (role.trim()) baseScore += 10;
+    if (jdText.length > 800) baseScore += 10;
+    baseScore = Math.min(baseScore, 100);
 
-    // 4. 7-Day Plan
-    const plan = [
-        "Day 1-2: Review CS Fundamentals (OS, DBMS) and Language basics.",
-        "Day 3-4: Practice DSA problems related to " + (allFoundSkills.includes("DSA") ? "detected patterns" : "Arrays/Strings") + ".",
-        "Day 5: Deep dive into project implementation and resume alignment.",
-        "Day 6: Mock interview session focused on " + (role || "Technical") + " behavioral questions.",
-        "Day 7: Final revision of common patterns and weak areas identified."
+    // 3. Round Mapping
+    const enterpriseNames = ["amazon", "google", "meta", "tcs", "infosys", "microsoft", "netflix", "apple", "ibm", "oracle", "wipro", "hcl", "accenture", "capgemini"];
+    const isEnterprise = enterpriseNames.some(e => company.toLowerCase().includes(e));
+
+    const roundMapping: RoundMappingItem[] = isEnterprise ? [
+        { roundTitle: "Round 1: Online Screening", focusAreas: ["Aptitude", "DSA Basics"], whyItMatters: "Standardized filter for large volumes of applicants." },
+        { roundTitle: "Round 2: Technical I (DSA)", focusAreas: ["Complexity Analysis", "Data Structures"], whyItMatters: "Proves technical foundation and problem-solving grit." },
+        { roundTitle: "Round 3: Technical II (System)", focusAreas: ["Core CS", "Design Patterns"], whyItMatters: "Evaluates ability to build scalable and maintainable solutions." },
+        { roundTitle: "Round 4: HR & Values", focusAreas: ["Cultural Fit", "Behavioral"], whyItMatters: "Ensures long-term alignment with company culture." }
+    ] : [
+        { roundTitle: "Round 1: Practical Assessment", focusAreas: ["Stack Implementation", "Bug Fixes"], whyItMatters: "Agile environments need people who can ship code fast." },
+        { roundTitle: "Round 2: Technical Discussion", focusAreas: ["Project Depth", "Stack Expertise"], whyItMatters: "Checks if you truly understand the tools you use." },
+        { roundTitle: "Round 3: Culture & Founder", focusAreas: ["Vision Alignment", "Adaptability"], whyItMatters: "Critical for small teams to have shared ownership." }
     ];
 
-    // 5. Interview Questions
-    const questions: string[] = [];
-    if (allFoundSkills.length === 0) {
-        questions.push(
-            "Explain the basic principles of Object Oriented Programming.",
-            "What are the primary differences between SQL and NoSQL databases?",
-            "How do you ensure your code is clean and maintainable?",
-            "Describe a project you worked on and the biggest technical challenge you faced.",
-            "Explain the concept of time and space complexity with an example."
-        );
-    } else {
-        if (allFoundSkills.includes("SQL")) questions.push("Explain indexing and when it helps.");
-        if (allFoundSkills.includes("React")) questions.push("Explain state management options in React (Context vs Redux).");
-        if (allFoundSkills.includes("DSA")) questions.push("How would you optimize search in sorted data?");
-        if (allFoundSkills.includes("Node.js")) questions.push("Explain the Node.js Event Loop and why it's beneficial.");
-        if (allFoundSkills.includes("Docker")) questions.push("What is the difference between a Container and a Virtual Machine?");
-        if (allFoundSkills.includes("Java")) questions.push("Explain the concept of JVM, JRE, and JDK.");
-        if (allFoundSkills.includes("Python")) questions.push("What are decorators in Python and how do they work?");
+    // 4. Checklist & 7-Day Plan
+    const checklist: ChecklistItem[] = roundMapping.map(rm => ({
+        roundTitle: rm.roundTitle,
+        items: [rm.focusAreas[0], ...allFoundSkills.slice(0, 4), "Mock Interview"].slice(0, 6)
+    }));
 
-        // Fill up to 10 if needed
-        const generic = [
-            "Tell me about a time you had to debug a complex issue.",
-            "How do you stay updated with the latest trends in " + (allFoundSkills[0] || "tech") + "?",
-            "Explain your favorite architectural pattern for building scalable apps.",
-            "What is your approach to testing your application code?"
-        ];
-        while (questions.length < 10) {
-            questions.push(generic[questions.length % generic.length]);
-        }
-    }
+    const plan7Days: DayPlan[] = [
+        { day: "Day 1-2", focus: "Foundation", tasks: ["Review " + (extracted.coreCS[0] || "CS Basics"), "Mock Test on Aptitude"] },
+        { day: "Day 3-4", focus: "Practice", tasks: ["Solve 10 problems on " + (allFoundSkills[0] || "Arrays"), "Practice Complexity"] },
+        { day: "Day 5", focus: "Resume", tasks: ["Align projects with " + (company || "JD"), "Impact metrics"] },
+        { day: "Day 6-7", focus: "Final Push", tasks: ["Simulate " + roundMapping[0].roundTitle, "Final Revision"] }
+    ];
 
-    // 6. Company Intel & Round Mapping
-    const enterpriseNames = ["amazon", "google", "meta", "tcs", "infosys", "microsoft", "netflix", "apple", "ibm", "oracle", "wipro", "hcl", "accenture", "capgemini"];
-    const compLower = company.toLowerCase();
-
-    let size: 'Startup' | 'Mid-size' | 'Enterprise' = 'Startup';
-    if (enterpriseNames.some(e => compLower.includes(e))) {
-        size = 'Enterprise';
-    } else if (jdText.length > 1500 || categoriesFound > 3) {
-        size = 'Mid-size';
-    }
-
-    let industry = 'Technology Services';
-    if (compLower.includes('bank') || compLower.includes('finance') || compLower.includes('capital')) industry = 'FinTech / Banking';
-    if (compLower.includes('health') || compLower.includes('medical')) industry = 'HealthTech';
-    if (compLower.includes('auto') || compLower.includes('motor')) industry = 'Automotive';
-
-    const focus = size === 'Enterprise'
-        ? "Deep focus on DSA, OS, DBMS fundamentals and scalable systems."
-        : "Practical depth in the tech stack, problem-solving speed, and project impact.";
-
-    const rounds: { round: string; focus: string; description: string; }[] = [];
-    if (size === 'Enterprise') {
-        rounds.push(
-            { round: "Round 1: Screening", focus: "Aptitude + Basic DSA", description: "Standardized test to filter candidates based on logical reasoning and basic coding." },
-            { round: "Round 2: Technical I", focus: "Core DSA + Complexity", description: "Deep dive into data structures, algorithms, and efficiency." },
-            { round: "Round 3: Technical II", focus: "CS Core + Projects", description: "Assessment of Operating Systems, DBMS principles and your previous work." },
-            { round: "Round 4: HR/Managerial", focus: "Behavioral Fits", description: "Evaluating alignment with company values and long-term potential." }
-        );
-    } else {
-        rounds.push(
-            { round: "Round 1: Practical", focus: "Stack Implementation", description: "Building a small feature or fixing bugs in a live environment." },
-            { round: "Round 2: Systems", focus: "Architecture & Stack", description: "Discussion on how you'd design features using " + (allFoundSkills[0] || "modern tech") + "." },
-            { round: "Round 3: Founder/Culture", focus: "Vision Alignment", description: "Direct conversation with the team about growth and contribution." }
-        );
-    }
+    // 5. Questions
+    const questions = [
+        allFoundSkills.includes("React") ? "Explain the difference between useMemo and useCallback." : "Explain memory management in your primary language.",
+        allFoundSkills.includes("SQL") ? "How do you optimize a slow query in a large database?" : "Briefly describe a situation where you chose between two technologies.",
+        "Describe the most challenging part of your main project.",
+        "How do you handle conflicting requirements in a team environment?",
+        "Explain the concept of CAP theorem in distributed systems.",
+        "What is your approach to handling technical debt?",
+        "How do you stay current with tech trends?",
+        "Describe a time you failed and what you learned.",
+        "Solve: Find the middle element of a linked list.",
+        "Why " + (company || "this company") + "?"
+    ].slice(0, 10);
 
     const confidenceMap: Record<string, 'know' | 'practice'> = {};
-    allFoundSkills.forEach(skill => {
-        confidenceMap[skill] = 'practice';
-    });
+    allFoundSkills.forEach(skill => { confidenceMap[skill] = 'practice'; });
 
     return {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         company,
         role,
         jdText,
-        extractedSkills: extracted.length > 0 ? extracted : [{ category: "General", skills: ["General fresher stack"] }],
-        plan,
+        extractedSkills: extracted,
+        roundMapping,
         checklist,
-        questions: questions.slice(0, 10),
-        readinessScore: score,
-        baseReadinessScore: score,
-        skillConfidenceMap: confidenceMap,
-        companyIntel: { industry, size, focus },
-        roundMapping: rounds
+        plan7Days,
+        questions,
+        baseScore,
+        finalScore: baseScore,
+        skillConfidenceMap: confidenceMap
     };
+}
+
+export function getHistory(): AnalysisResult[] {
+    const data = localStorage.getItem('prep_history');
+    if (!data) return [];
+    try {
+        const parsed = JSON.parse(data);
+        return parsed.filter((entry: any) => {
+            // Basic validation for required fields
+            return entry && entry.id && entry.jdText && entry.extractedSkills;
+        });
+    } catch (e) {
+        console.error("Corrupted history", e);
+        return [];
+    }
+}
+
+export function saveResult(result: AnalysisResult) {
+    const history = getHistory();
+    const updated = [result, ...history];
+    localStorage.setItem('prep_history', JSON.stringify(updated.slice(0, 20)));
 }
 
 export function updateResult(updatedResult: AnalysisResult) {
     const history = getHistory();
     const index = history.findIndex(r => r.id === updatedResult.id);
     if (index !== -1) {
-        history[index] = updatedResult;
+        history[index] = { ...updatedResult, updatedAt: new Date().toISOString() };
         localStorage.setItem('prep_history', JSON.stringify(history));
     }
-}
-
-export function saveResult(result: AnalysisResult) {
-    const updated = [result, ...getHistory()]; // Use getHistory to ensure migration is applied before saving
-    localStorage.setItem('prep_history', JSON.stringify(updated.slice(0, 20))); // Keep last 20
-}
-
-export function getHistory(): AnalysisResult[] {
-    const data = localStorage.getItem('prep_history');
-    if (!data) return [];
-    const parsed = JSON.parse(data);
-    // Migration for old entries
-    return parsed.map((r: any) => ({
-        ...r,
-        baseReadinessScore: r.baseReadinessScore ?? r.readinessScore ?? 35,
-        skillConfidenceMap: r.skillConfidenceMap ?? {}
-    })) as AnalysisResult[];
 }
 
 export function getResultById(id: string): AnalysisResult | undefined {
