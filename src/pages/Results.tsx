@@ -9,10 +9,14 @@ import {
     Share2,
     Trophy,
     Copy,
-    FileText,
     Zap,
     Check,
-    Circle
+    Circle,
+    Building2,
+    Users,
+    Target,
+    Info,
+    GitCommit
 } from 'lucide-react';
 import { getResultById, updateResult, AnalysisResult } from '../utils/analysis';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/Card';
@@ -47,7 +51,6 @@ export default function Results() {
         const currentStatus = result.skillConfidenceMap[skill] || 'practice';
         const newStatus = currentStatus === 'know' ? 'practice' : 'know';
 
-        // Calculate new score
         const newMap: Record<string, 'know' | 'practice'> = {
             ...result.skillConfidenceMap,
             [skill]: newStatus
@@ -57,6 +60,7 @@ export default function Results() {
         Object.values(newMap).forEach(status => {
             scoreAdjustment += status === 'know' ? 2 : -2;
         });
+
         const newScore = Math.max(0, Math.min(100, result.baseReadinessScore + scoreAdjustment));
 
         const updated = {
@@ -81,6 +85,11 @@ PLACEMENT PREPARATION REPORT - ${result.company || 'Direct Entry'}
 Role: ${result.role}
 Date: ${new Date(result.createdAt).toLocaleDateString()}
 Readiness Score: ${result.readinessScore}%
+
+COMPANY INTEL:
+Industry: ${result.companyIntel?.industry}
+Size: ${result.companyIntel?.size}
+Hiring Focus: ${result.companyIntel?.focus}
 
 EXTRACTED SKILLS:
 ${result.extractedSkills.map(c => `${c.category}: ${c.skills.join(', ')}`).join('\n')}
@@ -139,6 +148,46 @@ ${result.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column */}
                 <div className="lg:col-span-1 space-y-8">
+                    {/* Company Intel Block */}
+                    {result.companyIntel && (
+                        <Card className="border-primary/10 overflow-hidden">
+                            <div className="bg-primary/5 p-6 border-b border-primary/10">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <Building2 className="h-5 w-5 text-primary" />
+                                    <h3 className="font-bold text-slate-900">Company Intelligence</h3>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">Heuristically mapped data</p>
+                            </div>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="flex items-center justify-between py-2 border-b border-slate-50">
+                                    <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                                        <Target className="h-4 w-4" />
+                                        Industry
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-800">{result.companyIntel.industry}</span>
+                                </div>
+                                <div className="flex items-center justify-between py-2 border-b border-slate-50">
+                                    <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                                        <Users className="h-4 w-4" />
+                                        Size
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${result.companyIntel.size === 'Enterprise' ? 'bg-amber-100 text-amber-700' :
+                                            result.companyIntel.size === 'Mid-size' ? 'bg-blue-100 text-blue-700' :
+                                                'bg-emerald-100 text-emerald-700'
+                                        }`}>
+                                        {result.companyIntel.size}
+                                    </span>
+                                </div>
+                                <div className="pt-2">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Hiring Focus</p>
+                                    <p className="text-xs font-medium text-slate-600 leading-relaxed italic">
+                                        "{result.companyIntel.focus}"
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Card className="text-center py-10 bg-gradient-to-b from-white to-slate-50 ring-1 ring-slate-200 shadow-xl relative overflow-visible">
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest shadow-lg">
                             Live Readiness
@@ -157,7 +206,7 @@ ${result.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
                             <span className="absolute text-3xl font-black text-slate-900">{result.readinessScore}%</span>
                         </div>
                         <p className="text-slate-500 font-bold px-6 text-sm">
-                            Score updates as you mark skills as mastered.
+                            Current confidence based on JD match & mastery.
                         </p>
                     </Card>
 
@@ -167,7 +216,6 @@ ${result.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
                                 <Trophy className="h-5 w-5 text-amber-500" />
                                 Key skills extracted
                             </CardTitle>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Click to toggle mastery</p>
                         </CardHeader>
                         <CardContent className="space-y-6 pt-0">
                             {result.extractedSkills.map((cat, i) => (
@@ -181,8 +229,8 @@ ${result.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
                                                     key={j}
                                                     onClick={() => toggleSkill(skill)}
                                                     className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${isKnown
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                        : 'bg-white text-slate-600 border-slate-200 hover:border-primary/30'
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                            : 'bg-white text-slate-600 border-slate-200 hover:border-primary/30'
                                                         }`}
                                                 >
                                                     {isKnown ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5 opacity-30" />}
@@ -217,10 +265,58 @@ ${result.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
                             )}
                         </CardContent>
                     </Card>
+
+                    <div className="flex items-center gap-2 p-4 bg-slate-100/50 rounded-2xl border border-slate-200/50">
+                        <Info className="h-4 w-4 text-slate-400" />
+                        <p className="text-[10px] font-bold text-slate-500">Demo Mode: Company intel generated heuristically.</p>
+                    </div>
                 </div>
 
                 {/* Right Column */}
                 <div className="lg:col-span-2 space-y-8">
+                    {/* Round Mapping Engine (Vertical Timeline) */}
+                    {result.roundMapping && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <GitCommit className="h-6 w-6 text-primary" />
+                                    Typical Round Mapping
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-0 relative">
+                                {/* The line */}
+                                <div className="absolute left-[33px] top-[40px] bottom-[40px] w-0.5 bg-slate-100" />
+
+                                {result.roundMapping.map((r, i) => (
+                                    <div key={i} className="relative flex gap-8 p-6 group">
+                                        <div className={`h-4 w-4 rounded-full mt-2 ring-4 relative z-10 transition-all ${i === 0 ? 'bg-primary ring-primary/10' : 'bg-white border-2 border-slate-200 ring-transparent'
+                                            }`} />
+                                        <div className="flex-1 space-y-1">
+                                            <div className="flex items-center gap-3">
+                                                <h4 className="font-black text-slate-900 tracking-tight">{r.round}</h4>
+                                                <span className="text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 tracking-widest">
+                                                    {r.focus}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-slate-600 font-medium italic mb-2">"{r.description}"</p>
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Why this matters</p>
+                                                <p className="text-[11px] text-slate-600 leading-relaxed">
+                                                    {r.round.includes("DSA") || r.focus.includes("DSA")
+                                                        ? "Essential to prove your problem-solving foundations before discussing complex systems."
+                                                        : r.round.includes("Culture") || r.focus.includes("Behavioral")
+                                                            ? "Finding alignment on work ethic and long-term vision is critical for startup success."
+                                                            : "This phase checks your ability to translate theoretical knowledge into working software."
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle className="flex items-center gap-2">

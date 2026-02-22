@@ -16,6 +16,16 @@ export interface AnalysisResult {
     readinessScore: number;
     baseReadinessScore: number;
     skillConfidenceMap: Record<string, 'know' | 'practice'>;
+    companyIntel?: {
+        industry: string;
+        size: 'Startup' | 'Mid-size' | 'Enterprise';
+        focus: string;
+    };
+    roundMapping?: {
+        round: string;
+        focus: string;
+        description: string;
+    }[];
 }
 
 const SKILL_DATABASE = {
@@ -113,6 +123,42 @@ export function analyzeJD(company: string, role: string, jdText: string): Analys
         }
     }
 
+    // 6. Company Intel & Round Mapping
+    const enterpriseNames = ["amazon", "google", "meta", "tcs", "infosys", "microsoft", "netflix", "apple", "ibm", "oracle", "wipro", "hcl", "accenture", "capgemini"];
+    const compLower = company.toLowerCase();
+
+    let size: 'Startup' | 'Mid-size' | 'Enterprise' = 'Startup';
+    if (enterpriseNames.some(e => compLower.includes(e))) {
+        size = 'Enterprise';
+    } else if (jdText.length > 1500 || categoriesFound > 3) {
+        size = 'Mid-size';
+    }
+
+    let industry = 'Technology Services';
+    if (compLower.includes('bank') || compLower.includes('finance') || compLower.includes('capital')) industry = 'FinTech / Banking';
+    if (compLower.includes('health') || compLower.includes('medical')) industry = 'HealthTech';
+    if (compLower.includes('auto') || compLower.includes('motor')) industry = 'Automotive';
+
+    const focus = size === 'Enterprise'
+        ? "Deep focus on DSA, OS, DBMS fundamentals and scalable systems."
+        : "Practical depth in the tech stack, problem-solving speed, and project impact.";
+
+    const rounds: { round: string; focus: string; description: string; }[] = [];
+    if (size === 'Enterprise') {
+        rounds.push(
+            { round: "Round 1: Screening", focus: "Aptitude + Basic DSA", description: "Standardized test to filter candidates based on logical reasoning and basic coding." },
+            { round: "Round 2: Technical I", focus: "Core DSA + Complexity", description: "Deep dive into data structures, algorithms, and efficiency." },
+            { round: "Round 3: Technical II", focus: "CS Core + Projects", description: "Assessment of Operating Systems, DBMS principles and your previous work." },
+            { round: "Round 4: HR/Managerial", focus: "Behavioral Fits", description: "Evaluating alignment with company values and long-term potential." }
+        );
+    } else {
+        rounds.push(
+            { round: "Round 1: Practical", focus: "Stack Implementation", description: "Building a small feature or fixing bugs in a live environment." },
+            { round: "Round 2: Systems", focus: "Architecture & Stack", description: "Discussion on how you'd design features using " + (allFoundSkills[0] || "modern tech") + "." },
+            { round: "Round 3: Founder/Culture", focus: "Vision Alignment", description: "Direct conversation with the team about growth and contribution." }
+        );
+    }
+
     const confidenceMap: Record<string, 'know' | 'practice'> = {};
     allFoundSkills.forEach(skill => {
         confidenceMap[skill] = 'practice';
@@ -130,7 +176,9 @@ export function analyzeJD(company: string, role: string, jdText: string): Analys
         questions: questions.slice(0, 10),
         readinessScore: score,
         baseReadinessScore: score,
-        skillConfidenceMap: confidenceMap
+        skillConfidenceMap: confidenceMap,
+        companyIntel: { industry, size, focus },
+        roundMapping: rounds
     };
 }
 
