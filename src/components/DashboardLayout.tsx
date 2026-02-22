@@ -20,6 +20,7 @@ export default function DashboardLayout() {
         { name: 'Assessments', icon: ClipboardList, path: '/assessments' },
         { name: 'Resources', icon: BookOpen, path: '/resources' },
         { name: 'Profile', icon: UserCircle, path: '/profile' },
+        { name: 'Quality Guard', icon: ClipboardList, path: '/prp/07-test' },
     ];
 
     return (
@@ -40,8 +41,8 @@ export default function DashboardLayout() {
                                 key={item.name}
                                 to={item.path}
                                 className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-300 ${isActive
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]'
-                                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]'
+                                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                                     }`}
                             >
                                 <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`} />
