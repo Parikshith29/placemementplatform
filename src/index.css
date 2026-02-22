@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@100..900&display=swap');
+
+:root {
+  /* Colors - Minimalist SaaS Palette */
+  --bg-primary: #F7F6F3;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --accent-primary: #8B0000; /* Deep Red */
+  --accent-hover: #660000;
+  --status-success: #4F6D5E; /* Muted Green */
+  --status-warning: #D4A373; /* Muted Amber */
+  --border-color: #E2E2E0;
+  
+  /* Spacing Scale - Strictly Adhered */
+  --spacing-8: 8px;
+  --spacing-16: 16px;
+  --spacing-24: 24px;
+  --spacing-40: 40px;
+  --spacing-64: 64px;
+
+  /* Typography */
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  --line-height-body: 1.6;
+  --line-height-heading: 1.2;
+  
+  --transition-fast: 150ms ease-in-out;
+  --border-radius: 4px; /* Consistent sharp but slightly rounded radius */
+}
+
+/* Global Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .serif {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: var(--line-height-heading);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: var(--transition-fast);
+}
+
+input, textarea {
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+/* Typography Utils */
+.text-max-width {
+  max-width: 720px;
+}
+
+.subtext {
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-24);
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: var(--spacing-8); }
+.gap-16 { gap: var(--spacing-16); }
+.gap-24 { gap: var(--spacing-24); }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
